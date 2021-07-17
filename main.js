@@ -63,7 +63,7 @@ function createBird(chromosome) {
         var y = pipe.height - bird.y;
 
         if (brain.shouldJump(chromosome, x, y, bird.speed)) {
-            bird.speed = 5;
+            bird.speed = 6;
         }
         
         bird.speed -= 0.5;
@@ -84,9 +84,11 @@ for (var i = 0; i < birds.length; ++i)
     parentChromosomes.push(birds[i].chromosome);
 
 var generationCounter = document.getElementById("generation-count");
+var birdsCounter = document.getElementById("birds-count");
 var currentScoreCounter = document.getElementById("current-score-count");
 var globalScoreCounter = document.getElementById("global-score-count");
 generationCounter.innerHTML = generation;
+birdsCounter.innerHTML = birds.length;
 currentScoreCounter.innerHTML = currentScore;
 globalScoreCounter.innerHTML = globalScore;
 
@@ -109,15 +111,20 @@ function gameLoop() {
     for (var i = 0; i < pipes.length; ++i) {
         var pipe = pipes[i];
         pipe.x -= pipe.speed;
-        if (pipe.x < -pipe.image1.width)
+        if (pipe.x < -pipe.image1.width) {
+            ++currentScore;
+            globalScore = Math.max(globalScore, currentScore);
+            currentScoreCounter.innerHTML = currentScore;
+            globalScoreCounter.innerHTML = globalScore;
             continue;
+        }
 
         newPipes.push(pipe);
     }
 
     while (newPipes.length < 2) {
         var prevPipe = newPipes.length > 0 ? newPipes[newPipes.length - 1] : undefined;
-        var height = parseInt(Math.random() * (330 - 30) + 30);
+        var height = parseInt(Math.random() * (330 - 50) + 50);
         var pipe = createPipe(height);
         pipe.x = prevPipe ? prevPipe.x + 200 : 200;
         newPipes.push(pipe);
@@ -132,9 +139,9 @@ function gameLoop() {
             continue;
         if (bird.y + bird.image.height / 2 < 0)
             continue;
-        if (bird.x >= pipes[0].x && bird.x <= pipes[0].x + pipes[0].image1.width && bird.y < pipes[0].height - pipes[0].gap / 2)
+        if (bird.x + bird.image.width >= pipes[0].x && bird.x <= pipes[0].x + pipes[0].image1.width && bird.y < pipes[0].height - pipes[0].gap / 2)
             continue;
-        if (bird.x >= pipes[0].x && bird.x <= pipes[0].x + pipes[0].image1.width && bird.y + bird.image.height > pipes[0].height + pipes[0].gap / 2)
+        if (bird.x + bird.image.width >= pipes[0].x && bird.x <= pipes[0].x + pipes[0].image1.width && bird.y + bird.image.height > pipes[0].height + pipes[0].gap / 2)
             continue;
 
         ++bird.chromosome.fitness;
@@ -142,14 +149,16 @@ function gameLoop() {
     }
     if (newBirds.length === 0) {
         ++generation;
-        document.getElementById("generation-count").innerHTML = generation;
+        currentScore = 0;
+        generationCounter.innerHTML = generation;
+        currentScoreCounter.innerHTML = currentScore;
         birds = [];
         parentChromosomes.sort(function(c1, c2) { return c2.fitness - c1.fitness; });
         parents = parentChromosomes.slice(0, 5);
         for (var i = 0; i < 5; ++i) {
             for (var j = i + 1; j < 5; ++j) {
                 var chromosome = crossover(parents[i], parents[j]);
-                if (Math.random() < 0.2)
+                if (Math.random() < 0.5)
                     mutate(chromosome);
                 birds.push(createBird(chromosome));
             }
@@ -164,10 +173,12 @@ function gameLoop() {
         pipes = [];
         base.x = 0;
         background.x = 0;
+        birdsCounter.innerHTML = birds.length;
         requestAnimationFrame(gameLoop);
         return;
     }
     birds = newBirds;
+    birdsCounter.innerHTML = birds.length;
 
     context.drawImage(background.image, background.x, 0);
     context.drawImage(background.image, background.x + background.image.width, 0);
